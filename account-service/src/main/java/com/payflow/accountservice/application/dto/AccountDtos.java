@@ -12,9 +12,6 @@ public class AccountDtos {
             @NotBlank(message = "Sahip ID boş olamaz")
             String ownerId,
 
-            @NotBlank(message = "Hesap tipi boş olamaz")
-            String accountType,
-
             @NotBlank(message = "Para birimi boş olamaz")
             String currency,
 
@@ -23,33 +20,25 @@ public class AccountDtos {
     ) {}
 
     public record DepositRequest(
-            @NotNull @Positive
-            BigDecimal amount,
-
-            @NotBlank
-            String currency,
-
+            @NotNull @Positive BigDecimal amount,
+            @NotBlank String currency,
             String description
     ) {}
 
     public record WithdrawRequest(
-            @NotNull @Positive
-            BigDecimal amount,
-
-            @NotBlank
-            String currency,
-
+            @NotNull @Positive BigDecimal amount,
+            @NotBlank String currency,
             String description
     ) {}
 
-    // Response DTO'ları
     public record AccountResponse(
             String id,
             String ownerId,
-            String accountType,
+            String status,
+            String statusReason,
             BigDecimal balance,
             String currency,
-            String status,
+            String accountNumber,
             LocalDateTime createdAt
     ) {}
 
@@ -58,15 +47,5 @@ public class AccountDtos {
             BigDecimal balance,
             String currency,
             LocalDateTime checkedAt
-    ) {}
-
-    public record TransactionResponse(
-            String transactionId,
-            String type,
-            BigDecimal amount,
-            String currency,
-            BigDecimal balanceAfter,
-            String description,
-            LocalDateTime timestamp
     ) {}
 }
