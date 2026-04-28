@@ -1,0 +1,23 @@
+### Ödeme başlat
+POST http://localhost:8082/api/payments
+Content-Type: application/json
+
+{
+  "sourceAccountId": "3519a8df-3162-40ce-a66c-e570b571a29e",
+  "targetAccountId": "7bbf7848-0022-4a09-8e60-417aeffb8adb",
+  "amount": 100.00,
+  "currency": "TRY",
+  "description": "Test ödemesi"
+}
+
+###
+
+### Ödeme getir
+GET http://localhost:8082/api/payments/0fee40d0-d4e1-43ce-af56-9748733e834d
+
+
+### Ödeme durumu — COMPLETED olmalı
+GET http://localhost:8082/api/payments/0fee40d0-d4e1-43ce-af56-9748733e834d
+
+### Bakiye — 500 azalmış olmalı
+GET http://localhost:8081/api/accounts/3519a8df-3162-40ce-a66c-e570b571a29e/balance
