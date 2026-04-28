@@ -1,8 +1,8 @@
 spring:
   application:
-    name: account-service
+    name: payment-service
   datasource:
-    url: jdbc:postgresql://${DB_HOST:localhost}:5432/accountdb
+    url: jdbc:postgresql://${DB_HOST:localhost}:5433/paymentdb
     username: ${DB_USERNAME:postgres}
     password: ${DB_PASSWORD:postgres}
     driver-class-name: org.postgresql.Driver
@@ -24,17 +24,17 @@ spring:
       properties:
         spring.json.add.type.headers: false
     consumer:
-      group-id: account-service-group
+      group-id: payment-service-group
       key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
       value-deserializer: org.springframework.kafka.support.serializer.JsonDeserializer
       auto-offset-reset: earliest
       properties:
         spring.json.trusted.packages: "*"
-        spring.json.value.default.type: com.payflow.accountservice.domain.event.PaymentInitiatedEvent
+        spring.json.value.default.type: com.payflow.paymentservice.domain.event.AccountDebitedEvent
 
 
 server:
-  port: 8081
+  port: 8082
 
 management:
   endpoints:

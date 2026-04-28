@@ -1,10 +1,13 @@
 package com.payflow.accountservice.application.service;
 
 import com.payflow.accountservice.application.dto.AccountDtos;
+import com.payflow.accountservice.domain.event.AccountDebitedEvent;
 import com.payflow.accountservice.domain.event.AccountEvent;
+import com.payflow.accountservice.domain.event.PaymentInitiatedEvent;
 import com.payflow.accountservice.domain.exception.AccountException;
 import com.payflow.accountservice.domain.model.Account;
 import com.payflow.accountservice.domain.model.Money;
+import com.payflow.accountservice.infrastructure.kafka.producer.AccountEventProducer;
 import com.payflow.accountservice.infrastructure.repository.AccountRepository;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -17,9 +20,11 @@ import java.util.List;
 @Slf4j
 public class AccountService {
     private final AccountRepository accountRepository;
+    private final AccountEventProducer eventProducer;
 
-    public AccountService(AccountRepository accountRepository) {
+    public AccountService(AccountRepository accountRepository, AccountEventProducer eventProducer) {
         this.accountRepository = accountRepository;
+        this.eventProducer = eventProducer;
     }
 
     @Transactional
@@ -110,6 +115,69 @@ public class AccountService {
     }
 
 
+    @Transactional
+    public void processPayment(PaymentInitiatedEvent event) {
+        log.info("Ödeme işleniyor: {} | hesap: {} | miktar: {}",
+                event.paymentId(), event.sourceAccountId(), event.amount());
+
+        // Hesabı bul
+        Account account = accountRepository.findById(event.sourceAccountId())
+                .orElse(null);
+
+        // Hesap yoksa başarısız event gönder
+        if (account == null) {
+            log.warn("Hesap bulunamadı: {}", event.sourceAccountId());
+            eventProducer.sendAccountDebited(new AccountDebitedEvent(
+                    event.paymentId(),
+                    event.sourceAccountId(),
+                    event.amount(),
+                    event.currency(),
+                    false,
+                    "Hesap bulunamadı: " + event.sourceAccountId(),
+                    java.time.LocalDateTime.now()
+            ));
+            return;
+        }
+
+        try {
+            account.withdraw(
+                    new com.payflow.accountservice.domain.model.Money(
+                            event.amount(), event.currency()
+                    ),
+                    "Ödeme: " + event.paymentId()
+            );
+            accountRepository.save(account);
+
+            log.info("Bakiye düşüldü: {} | yeni bakiye: {}",
+                    event.sourceAccountId(), account.getBalance());
+
+            eventProducer.sendAccountDebited(new AccountDebitedEvent(
+                    event.paymentId(),
+                    event.sourceAccountId(),
+                    event.amount(),
+                    event.currency(),
+                    true,
+                    null,
+                    java.time.LocalDateTime.now()
+            ));
+
+        } catch (Exception e) {
+            log.error("Bakiye düşülemedi: {} | sebep: {}",
+                    event.sourceAccountId(), e.getMessage());
+
+            eventProducer.sendAccountDebited(new AccountDebitedEvent(
+                    event.paymentId(),
+                    event.sourceAccountId(),
+                    event.amount(),
+                    event.currency(),
+                    false,
+                    e.getMessage(),
+                    java.time.LocalDateTime.now()
+            ));
+        }
+    }
+
+
     private void processDomainEvents(Account account) {
         account.getDomainEvents().forEach(event -> {
             switch (event) {
@@ -150,5 +218,6 @@ public class AccountService {
         return accountRepository.findById(accountId)
                 .orElseThrow(() -> new AccountException.NotFound(accountId));
     }
+
 
 }
