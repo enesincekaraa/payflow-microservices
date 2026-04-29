@@ -33,6 +33,13 @@ spring:
         spring.json.value.default.type: com.payflow.paymentservice.domain.event.AccountDebitedEvent
 
 
+
+
+iyzico:
+  api-key: sandbox-qPhBZtIHXukh6lPz2S5YBtenri2fUiI8
+  secret-key: sandbox-3DMvi09esuTkPWci3ulIrYVPY76fcGeT
+  base-url: https://sandbox-api.iyzipay.com
+
 server:
   port: 8082
 
@@ -44,3 +51,5 @@ management:
   endpoint:
     health:
       show-details: always
+
+

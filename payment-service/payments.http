@@ -10,7 +10,33 @@ Content-Type: application/json
   "description": "Test ödemesi"
 }
 
+
 ###
+
+### Ödeme başlat — iyzico üzerinden
+POST http://localhost:8082/api/payments
+Content-Type: application/json
+
+{
+  "sourceAccountId": "b4136f51-1d6b-42b1-8b5d-e9338c4642a3",
+  "targetAccountId": "3519a8df-3162-40ce-a66c-e570b571a29e",
+  "amount": 100.00,
+  "currency": "TRY",
+  "description": "iyzico test ödemesi",
+  "cardDetails": {
+    "cardHolderName": "Test User",
+    "cardNumber": "5528790000000008",
+    "expireMonth": "12",
+    "expireYear": "2030",
+    "cvc": "123"
+  },
+  "buyerDetails": {
+    "buyerId": "user-123",
+    "name": "Ahmet",
+    "surname": "Yılmaz",
+    "email": "ahmet@test.com"
+  }
+}
 
 ### Ödeme getir
 GET http://localhost:8082/api/payments/0fee40d0-d4e1-43ce-af56-9748733e834d

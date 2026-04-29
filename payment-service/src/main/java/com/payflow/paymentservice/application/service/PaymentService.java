@@ -4,6 +4,7 @@ import com.payflow.paymentservice.application.dto.PaymentDtos;
 import com.payflow.paymentservice.domain.event.PaymentEvent;
 import com.payflow.paymentservice.domain.exception.PaymentException;
 import com.payflow.paymentservice.domain.model.Payment;
+import com.payflow.paymentservice.infrastructure.iyzico.IyzicoPaymentService;
 import com.payflow.paymentservice.infrastructure.kafka.producer.PaymentEventProducer;
 import com.payflow.paymentservice.infrastructure.repository.PaymentRepository;
 import lombok.extern.slf4j.Slf4j;
@@ -19,10 +20,12 @@ import java.util.List;
 public class PaymentService {
     private final PaymentRepository paymentRepository;
     private final PaymentEventProducer eventProducer;
+    private final IyzicoPaymentService iyzicoPaymentService;
 
-    public PaymentService(PaymentRepository paymentRepository, PaymentEventProducer eventProducer) {
+    public PaymentService(PaymentRepository paymentRepository, PaymentEventProducer eventProducer, IyzicoPaymentService iyzicoPaymentService) {
         this.paymentRepository = paymentRepository;
         this.eventProducer = eventProducer;
+        this.iyzicoPaymentService = iyzicoPaymentService;
     }
 
     @Transactional
@@ -38,15 +41,47 @@ public class PaymentService {
         Payment saved = paymentRepository.save(payment);
         log.info("Ödeme oluşturuldu: {} | PENDING", saved.getId());
 
-        eventProducer.sendInitiated(new PaymentEvent.PaymentInitiated(
+        IyzicoPaymentService.IyzicoPaymentResult result = iyzicoPaymentService.charge(
                 saved.getId(),
-                saved.getSourceAccountId(),
-                saved.getTargetAccountId(),
                 saved.getAmount(),
                 saved.getCurrency(),
-                saved.getDescription(),
-                LocalDateTime.now()
-        ));
+                new IyzicoPaymentService.CardInfo(
+                        req.cardDetails().cardHolderName(),
+                        req.cardDetails().cardNumber(),
+                        req.cardDetails().expireMonth(),
+                        req.cardDetails().expireYear(),
+                        req.cardDetails().cvc()
+
+                ),
+                new IyzicoPaymentService.BuyerInfo(
+                        req.buyerDetails().buyerId(),
+                        req.buyerDetails().name(),
+                        req.buyerDetails().surname(),
+                        req.buyerDetails().email()
+                )
+        );
+
+        if (result.success()){
+            log.info("iyzico onayladı: {} | iyzicoId: {}",
+                    saved.getId(), result.iyzicoPaymentId());
+            eventProducer.sendInitiated(new PaymentEvent.PaymentInitiated(
+                    saved.getId(),
+                    saved.getSourceAccountId(),
+                    saved.getTargetAccountId(),
+                    saved.getAmount(),
+                    saved.getCurrency(),
+                    saved.getDescription(),
+                    LocalDateTime.now()
+            ));
+
+        }else {
+            log.warn("iyzico reddetti: {} | sebep: {}",
+                    saved.getId(), result.errorMessage());
+            saved.fail(result.errorMessage());
+            paymentRepository.save(saved);
+        }
+
+
         return toResponse(saved);
     }
 
