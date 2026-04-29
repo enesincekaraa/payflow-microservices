@@ -8,8 +8,11 @@ import com.payflow.accountservice.domain.exception.AccountException;
 import com.payflow.accountservice.domain.model.Account;
 import com.payflow.accountservice.domain.model.Money;
 import com.payflow.accountservice.infrastructure.kafka.producer.AccountEventProducer;
+import com.payflow.accountservice.infrastructure.redis.CacheKeys;
 import com.payflow.accountservice.infrastructure.repository.AccountRepository;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -46,6 +49,7 @@ public class AccountService {
 
 
     @Transactional
+    @CacheEvict(value = CacheKeys.ACCOUNT,key = "#accountId")
     public AccountDtos.AccountResponse deposit(String accountId, AccountDtos.DepositRequest req){
         Account account = findById(accountId);
         account.deposit(
@@ -58,6 +62,7 @@ public class AccountService {
     }
 
     @Transactional
+    @CacheEvict(value = CacheKeys.ACCOUNT, key = "#accountId")
     public AccountDtos.AccountResponse withdraw(String accountId, AccountDtos.WithdrawRequest req){
         Account account = findById(accountId);
         account.withdraw(
@@ -70,12 +75,14 @@ public class AccountService {
     }
 
     @Transactional(readOnly = true)
+    @Cacheable(value = CacheKeys.ACCOUNT, key = "#accountId")
     public AccountDtos.AccountResponse getAccount(String accountId){
         Account account = findById(accountId);
         return toResponse(account);
     }
 
     @Transactional(readOnly = true)
+    @Cacheable(value = CacheKeys.BALANCE, key = "#accountId")
     public AccountDtos.BalanceResponse getBalance(String accountId){
         Account account = findById(accountId);
         return new AccountDtos.BalanceResponse(
@@ -95,12 +102,14 @@ public class AccountService {
     }
 
     @Transactional
+    @CacheEvict(value = CacheKeys.ACCOUNT, key = "#accountId")
     public AccountDtos.AccountResponse suspendAccount(String accountId,String reason){
         Account account = findById(accountId);
         account.suspend(reason);
         return toResponse(accountRepository.save(account));
     }
     @Transactional
+    @CacheEvict(value = CacheKeys.ACCOUNT, key = "#accountId")
     public AccountDtos.AccountResponse reactivateAccount(String accountId) {
         Account account = findById(accountId);
         account.reactivate();
@@ -108,6 +117,7 @@ public class AccountService {
     }
 
     @Transactional
+    @CacheEvict(value = CacheKeys.ACCOUNT, key = "#accountId")
     public AccountDtos.AccountResponse closeAccount(String accountId, String reason) {
         Account account = findById(accountId);
         account.close(reason);
@@ -147,6 +157,8 @@ public class AccountService {
                     "Ödeme: " + event.paymentId()
             );
             accountRepository.save(account);
+
+            evictAccountCache(account.getId());
 
             log.info("Bakiye düşüldü: {} | yeni bakiye: {}",
                     event.sourceAccountId(), account.getBalance());
@@ -217,6 +229,11 @@ public class AccountService {
     private Account findById(String accountId) {
         return accountRepository.findById(accountId)
                 .orElseThrow(() -> new AccountException.NotFound(accountId));
+    }
+
+    @CacheEvict(value = CacheKeys.ACCOUNT, key = "#accountId")
+    public void evictAccountCache(String accountId) {
+        log.info("Cache temizlendi: {}", accountId);
     }
 
 
