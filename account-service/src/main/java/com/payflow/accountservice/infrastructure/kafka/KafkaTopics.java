@@ -9,4 +9,6 @@ public final class KafkaTopics {
 
     // account-service üretir, payment-service tüketir
     public static final String ACCOUNT_DEBITED = "account-debited";
+
+    public static final String FRAUD_DETECTED = "fraud-detected";
 }
