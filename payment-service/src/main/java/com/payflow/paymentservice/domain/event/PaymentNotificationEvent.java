@@ -1,4 +1,4 @@
-package com.payflow.notificationservice.domain.event;
+package com.payflow.paymentservice.domain.event;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;

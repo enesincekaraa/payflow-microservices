@@ -9,16 +9,13 @@ import org.springframework.stereotype.Service;
 public class NotificationService {
 
     public void sendPaymentSuccessNotification(PaymentNotificationEvent event) {
-        log.info("║ Zaman     : {}", event.completedAt());
-        // Gerçek uygulamada burada email/SMS gönderilir
-        // Şimdilik log'a yazıyoruz
         log.info("╔══════════════════════════════════════╗");
         log.info("║     ÖDEME BAŞARILI BİLDİRİMİ         ║");
         log.info("╠══════════════════════════════════════╣");
         log.info("║ Ödeme ID  : {}", event.paymentId());
-        log.info("║ Hesap     : {}", event.sourceAccountId());
+        log.info("║ Hesap     : {}", event.accountId());
         log.info("║ Miktar    : {} {}", event.amount(), event.currency());
-        log.info("║ Zaman     : {}", event.completedAt());
+        log.info("║ Zaman     : {}", event.detectedAt());
         log.info("╚══════════════════════════════════════╝");
     }
 
@@ -27,9 +24,9 @@ public class NotificationService {
         log.warn("║     ÖDEME BAŞARISIZ BİLDİRİMİ        ║");
         log.warn("╠══════════════════════════════════════╣");
         log.warn("║ Ödeme ID  : {}", event.paymentId());
-        log.warn("║ Hesap     : {}", event.sourceAccountId());
-        log.warn("║ Sebep     : {}", event.failureReason());
-        log.warn("║ Zaman     : {}", event.completedAt());
+        log.warn("║ Hesap     : {}", event.accountId());
+        log.warn("║ Sebep     : {}", event.reason());
+        log.warn("║ Zaman     : {}", event.detectedAt());
         log.warn("╚══════════════════════════════════════╝");
     }
 }

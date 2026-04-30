@@ -2,6 +2,7 @@ package com.payflow.paymentservice.application.service;
 
 import com.payflow.paymentservice.application.dto.PaymentDtos;
 import com.payflow.paymentservice.domain.event.PaymentEvent;
+import com.payflow.paymentservice.domain.event.PaymentNotificationEvent;
 import com.payflow.paymentservice.domain.exception.PaymentException;
 import com.payflow.paymentservice.domain.model.Payment;
 import com.payflow.paymentservice.infrastructure.iyzico.IyzicoPaymentService;
@@ -86,18 +87,39 @@ public class PaymentService {
     }
 
     @Transactional
-    public void completePayment(String paymentId){
+    public void completePayment(String paymentId) {
         Payment payment = findById(paymentId);
         payment.complete();
         paymentRepository.save(payment);
+
         log.info("Ödeme tamamlandı: {}", paymentId);
 
-
-        eventProducer.sendPaymentCompleted(new PaymentEvent.PaymentCompleted(
+        eventProducer.sendNotification(new PaymentNotificationEvent(
                 payment.getId(),
                 payment.getSourceAccountId(),
+                null,
                 payment.getAmount(),
                 payment.getCurrency(),
+                true,
+                LocalDateTime.now()
+        ));
+    }
+
+    @Transactional
+    public void failPayment(String paymentId, String reason) {
+        Payment payment = findById(paymentId);
+        payment.fail(reason);
+        paymentRepository.save(payment);
+
+        log.warn("Ödeme başarısız: {} | sebep: {}", paymentId, reason);
+
+        eventProducer.sendNotification(new PaymentNotificationEvent(
+                payment.getId(),
+                payment.getSourceAccountId(),
+                reason,
+                payment.getAmount(),
+                payment.getCurrency(),
+                false,
                 LocalDateTime.now()
         ));
     }
@@ -115,20 +137,6 @@ public class PaymentService {
                 .toList();
     }
 
-    @Transactional
-    public void failPayment(String paymentId, String reason) {
-        Payment payment = findById(paymentId);
-        payment.fail(reason);
-        paymentRepository.save(payment);
-
-        log.warn("Ödeme başarısız: {} | sebep: {}", paymentId, reason);
-
-        eventProducer.sendPaymentFailed(new PaymentEvent.PaymentFailed(
-                payment.getId(),
-                reason,
-                LocalDateTime.now()
-        ));
-    }
 
     private Payment findById(String paymentId) {
         return paymentRepository.findById(paymentId).orElseThrow(

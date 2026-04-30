@@ -18,9 +18,9 @@ POST http://localhost:8082/api/payments
 Content-Type: application/json
 
 {
-  "sourceAccountId": "b4136f51-1d6b-42b1-8b5d-e9338c4642a3",
-  "targetAccountId": "3519a8df-3162-40ce-a66c-e570b571a29e",
-  "amount": 50.00,
+  "sourceAccountId": "968a2808-2068-4160-bf92-de7b92b7816f",
+  "targetAccountId": "b8e9d810-342e-4e06-818f-e6b29d729e70",
+  "amount": 15000.00,
   "currency": "TRY",
   "description": "iyzico test ödemesi",
   "cardDetails": {

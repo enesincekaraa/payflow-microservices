@@ -1,6 +1,7 @@
 package com.payflow.paymentservice.infrastructure.kafka.producer;
 
 import com.payflow.paymentservice.domain.event.PaymentEvent;
+import com.payflow.paymentservice.domain.event.PaymentNotificationEvent;
 import com.payflow.paymentservice.infrastructure.kafka.KafkaTopics;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.kafka.core.KafkaTemplate;
@@ -23,15 +24,9 @@ public class PaymentEventProducer {
         kafkaTemplate.send(KafkaTopics.PAYMENT_INITIATED, event.paymentId(),event);
     }
 
-    public void sendPaymentCompleted(PaymentEvent.PaymentCompleted event) {
-        log.info("Kafka'ya event gönderiliyor: {} | paymentId: {}",
-                KafkaTopics.PAYMENT_COMPLETED, event.paymentId());
-        kafkaTemplate.send(KafkaTopics.PAYMENT_COMPLETED, event.paymentId(), event);
-    }
 
-    public void sendPaymentFailed(PaymentEvent.PaymentFailed event) {
-        log.warn("Kafka'ya event gönderiliyor: {} | paymentId: {}",
-                KafkaTopics.PAYMENT_FAILED, event.paymentId());
-        kafkaTemplate.send(KafkaTopics.PAYMENT_FAILED, event.paymentId(), event);
+    public void sendNotification(PaymentNotificationEvent event){
+        String topic = event.success() ? KafkaTopics.PAYMENT_COMPLETED : KafkaTopics.PAYMENT_FAILED;
+        kafkaTemplate.send(topic, event.paymentId(), event);
     }
 }
