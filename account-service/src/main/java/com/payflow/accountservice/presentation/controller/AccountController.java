@@ -73,4 +73,21 @@ public class AccountController {
             @RequestParam String reason) {
         return ResponseEntity.ok(accountService.closeAccount(id, reason));
     }
+
+    @GetMapping("/{id}/transactions")
+    public ResponseEntity<AccountDtos.TransactionPageResponse> getTransactions(
+            @PathVariable String id,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size
+    ){
+        return ResponseEntity.ok(accountService.getTransactions(id, page, size));
+    }
+
+    @GetMapping("/{id}/transactions/filter")
+    public ResponseEntity<List<AccountDtos.TransactionResponse>> getTransactionsByType(
+            @PathVariable String id,
+            @RequestParam String type) {
+        return ResponseEntity.ok(
+                accountService.getTransactionsByType(id, type));
+    }
 }

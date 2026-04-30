@@ -5,6 +5,7 @@ import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Positive;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.util.List;
 
 public class AccountDtos {
 
@@ -47,5 +48,24 @@ public class AccountDtos {
             BigDecimal balance,
             String currency,
             LocalDateTime checkedAt
+    ) {}
+
+    public record TransactionResponse(
+            String id,
+            String accountId,
+            String paymentId,
+            String type,
+            BigDecimal amount,
+            String currency,
+            BigDecimal balanceAfter,
+            String description,
+            LocalDateTime createdAt
+    ){}
+
+    public record TransactionPageResponse(
+            List<TransactionResponse> transactions,
+            int currentPage,
+            int totalPages,
+            long totalElements
     ) {}
 }
