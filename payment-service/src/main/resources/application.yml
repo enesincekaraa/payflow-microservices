@@ -44,6 +44,13 @@ iyzico:
   secret-key: sandbox-3DMvi09esuTkPWci3ulIrYVPY76fcGeT
   base-url: https://sandbox-api.iyzipay.com
 
+
+
+scheduling:
+  pending-payment-timeout: 1  # 1 dakika — test için
+  cleanup:
+    fixed-delay: 30000         # 30 saniye — test için
+
 server:
   port: 8082
 
