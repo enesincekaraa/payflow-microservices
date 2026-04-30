@@ -36,6 +36,13 @@ spring:
     redis: ${REDIS_HOST:localhost}
     port: 6379
 
+scheduling:
+  daily-report:
+    cron: "0 0 0 * * *"        # Her gece 00:00
+  cleanup:
+    fixed-delay: 300000         # Her 5 dakika
+  pending-payment-timeout: 30   # 30 dakika bekleyen → FAILED
+
 server:
   port: 8081
 

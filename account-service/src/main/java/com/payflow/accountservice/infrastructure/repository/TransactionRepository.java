@@ -15,8 +15,8 @@ public interface TransactionRepository extends JpaRepository<Transaction, String
 
     List<Transaction> findByAccountIdAndTypeOrderByCreatedAtDesc(String accountId, TransactionType type);
 
-    List<Transaction> findByAccountIdAndCreatedAtBetweenOrderByCreatedAtDesc(
-            String accountId, LocalDateTime from, LocalDateTime to);
+    List<Transaction> findByCreatedAtBetweenOrderByCreatedAtDesc(
+            LocalDateTime from, LocalDateTime to);
 
     List<Transaction> findByPaymentId(String paymentId);
 

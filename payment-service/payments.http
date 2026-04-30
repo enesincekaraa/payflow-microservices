@@ -20,7 +20,7 @@ Content-Type: application/json
 {
   "sourceAccountId": "968a2808-2068-4160-bf92-de7b92b7816f",
   "targetAccountId": "b8e9d810-342e-4e06-818f-e6b29d729e70",
-  "amount": 15000.00,
+  "amount": 15.00,
   "currency": "TRY",
   "description": "iyzico test ödemesi",
   "cardDetails": {
