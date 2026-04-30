@@ -7,12 +7,18 @@ import com.payflow.accountservice.domain.event.PaymentInitiatedEvent;
 import com.payflow.accountservice.domain.exception.AccountException;
 import com.payflow.accountservice.domain.model.Account;
 import com.payflow.accountservice.domain.model.Money;
+import com.payflow.accountservice.domain.model.Transaction;
+import com.payflow.accountservice.domain.model.TransactionType;
 import com.payflow.accountservice.infrastructure.kafka.producer.AccountEventProducer;
 import com.payflow.accountservice.infrastructure.redis.CacheKeys;
 import com.payflow.accountservice.infrastructure.repository.AccountRepository;
+import com.payflow.accountservice.infrastructure.repository.TransactionRepository;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Cacheable;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -24,10 +30,12 @@ import java.util.List;
 public class AccountService {
     private final AccountRepository accountRepository;
     private final AccountEventProducer eventProducer;
+    private final TransactionRepository transactionRepository;
 
-    public AccountService(AccountRepository accountRepository, AccountEventProducer eventProducer) {
+    public AccountService(AccountRepository accountRepository, AccountEventProducer eventProducer, TransactionRepository transactionRepository) {
         this.accountRepository = accountRepository;
         this.eventProducer = eventProducer;
+        this.transactionRepository = transactionRepository;
     }
 
     @Transactional
@@ -57,6 +65,15 @@ public class AccountService {
                 req.description()
         );
         Account saved = accountRepository.save(account);
+
+        transactionRepository.save(Transaction.deposit(
+                saved.getId(),
+                req.amount(),
+                req.currency(),
+                saved.getBalance().amount(),
+                req.description()
+        ));
+
         processDomainEvents(saved);
         return toResponse(saved);
     }
@@ -70,6 +87,14 @@ public class AccountService {
                 req.description()
         );
         Account saved = accountRepository.save(account);
+
+        transactionRepository.save(Transaction.withdrawal(
+                saved.getId(),
+                req.amount(),
+                req.currency(),
+                saved.getBalance().amount(),
+                req.description()
+        ));
         processDomainEvents(saved);
         return toResponse(saved);
     }
@@ -158,6 +183,15 @@ public class AccountService {
             );
             accountRepository.save(account);
 
+            transactionRepository.save(Transaction.payment(
+                    account.getId(),
+                    event.paymentId(),
+                    event.amount(),
+                    event.currency(),
+                    account.getBalance().amount(),
+                    "Ödeme: " + event.paymentId()
+            ));
+
             evictAccountCache(account.getId());
 
             log.info("Bakiye düşüldü: {} | yeni bakiye: {}",
@@ -212,6 +246,55 @@ public class AccountService {
         });
         account.clearDomainEvents();
     }
+
+
+    @Transactional(readOnly = true)
+    public AccountDtos.TransactionPageResponse getTransactions(String accountId,int page,int size) {
+        findById(accountId);
+        Pageable pageable = PageRequest.of(page, size);
+        Page<Transaction> txPage = transactionRepository.findByAccountIdOrderByCreatedAtDesc(
+                accountId, pageable
+        );
+
+        List<AccountDtos.TransactionResponse> transactions = txPage.getContent()
+                .stream().map(this::toTransactionResponse)
+                .toList();
+
+        return new AccountDtos.TransactionPageResponse(
+                transactions,
+                txPage.getNumber(),
+                txPage.getTotalPages(),
+                txPage.getTotalElements()
+        );
+
+
+    }
+
+    @Transactional(readOnly = true)
+    public List<AccountDtos.TransactionResponse> getTransactionsByType(String accountId,String type) {
+        findById(accountId);
+
+        TransactionType transactionType=TransactionType.valueOf(type.toUpperCase());
+
+        return transactionRepository.findByAccountIdAndTypeOrderByCreatedAtDesc(accountId,transactionType)
+                .stream().map(this::toTransactionResponse)
+                .toList();
+    }
+
+    private AccountDtos.TransactionResponse toTransactionResponse(Transaction tx) {
+        return new AccountDtos.TransactionResponse(
+                tx.getId(),
+                tx.getAccountId(),
+                tx.getPaymentId(),
+                tx.getType().name(),
+                tx.getAmount(),
+                tx.getCurrency(),
+                tx.getBalanceAfter(),
+                tx.getDescription(),
+                tx.getCreatedAt()
+        );
+    }
+
 
     private AccountDtos.AccountResponse toResponse(Account account) {
         return new AccountDtos.AccountResponse(
