@@ -1,6 +1,7 @@
 package com.payflow.paymentservice.application.service;
 
 import com.payflow.paymentservice.application.dto.PaymentDtos;
+import com.payflow.paymentservice.application.dto.WebhookDtos;
 import com.payflow.paymentservice.domain.event.PaymentEvent;
 import com.payflow.paymentservice.domain.event.PaymentNotificationEvent;
 import com.payflow.paymentservice.domain.exception.PaymentException;
@@ -22,11 +23,13 @@ public class PaymentService {
     private final PaymentRepository paymentRepository;
     private final PaymentEventProducer eventProducer;
     private final IyzicoPaymentService iyzicoPaymentService;
+    private final WebhookService webhookService;
 
-    public PaymentService(PaymentRepository paymentRepository, PaymentEventProducer eventProducer, IyzicoPaymentService iyzicoPaymentService) {
+    public PaymentService(PaymentRepository paymentRepository, PaymentEventProducer eventProducer, IyzicoPaymentService iyzicoPaymentService, WebhookService webhookService) {
         this.paymentRepository = paymentRepository;
         this.eventProducer = eventProducer;
         this.iyzicoPaymentService = iyzicoPaymentService;
+        this.webhookService = webhookService;
     }
 
     @Transactional
@@ -93,6 +96,16 @@ public class PaymentService {
         paymentRepository.save(payment);
 
         log.info("Ödeme tamamlandı: {}", paymentId);
+
+        webhookService.dispatch(new WebhookDtos.WebhookPayload(
+                payment.getId(),
+                "PAYMENT_COMPLETED",
+                payment.getStatus().name(),
+                payment.getAmount(),
+                payment.getCurrency(),
+                payment.getSourceAccountId(),
+                java.time.LocalDateTime.now()
+        ));
 
         eventProducer.sendNotification(new PaymentNotificationEvent(
                 payment.getId(),

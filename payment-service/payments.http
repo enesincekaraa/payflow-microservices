@@ -47,3 +47,43 @@ GET http://localhost:8082/api/payments/0fee40d0-d4e1-43ce-af56-9748733e834d
 
 ### Bakiye — 500 azalmış olmalı
 GET http://localhost:8081/api/accounts/3519a8df-3162-40ce-a66c-e570b571a29e/balance
+
+
+
+### Webhook kaydet
+POST http://localhost:8082/api/webhooks
+Content-Type: application/json
+
+{
+  "clientId": "myshop-001",
+  "url": "https://webhook.site/774af857-1d5f-40d3-bc33-07caab56c364",
+  "events": "PAYMENT_COMPLETED,PAYMENT_FAILED"
+}
+
+### Ödeme yap — webhook tetiklenecek
+POST http://localhost:8082/api/payments
+Content-Type: application/json
+
+{
+  "sourceAccountId": "7e8165a1-238a-420b-8862-f7362df9d2e9",
+  "targetAccountId": "29ba84b7-b28f-4cde-8ccb-8dddd04609cd",
+  "amount": 50.00,
+  "currency": "TRY",
+  "description": "Webhook testi",
+  "cardDetails": {
+    "cardHolderName": "Test User",
+    "cardNumber": "5528790000000008",
+    "expireMonth": "12",
+    "expireYear": "2030",
+    "cvc": "123"
+  },
+  "buyerDetails": {
+    "buyerId": "user-123",
+    "name": "Ahmet",
+    "surname": "Yılmaz",
+    "email": "ahmet@test.com"
+  }
+}
+
+### Delivery logunu gör
+GET http://localhost:8082/api/webhooks/deliveries/363f135e-883c-44b1-968d-6300c9582318
