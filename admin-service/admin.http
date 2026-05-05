@@ -1,0 +1,43 @@
+### Hesap getir
+GET http://localhost:8085/api/admin/accounts/29ba84b7-b28f-4cde-8ccb-8dddd04609cd
+
+###
+
+### Hesabı askıya al
+PATCH http://localhost:8085/api/admin/accounts/29ba84b7-b28f-4cde-8ccb-8dddd04609cd/suspend
+Content-Type: application/json
+
+{
+  "reason": "Admin kararı ile askıya alındı"
+}
+
+###
+
+### İşlem geçmişi
+GET http://localhost:8085/api/admin/accounts/7e8165a1-238a-420b-8862-f7362df9d2e9/transactions
+
+###
+
+### Ödeme getir
+GET http://localhost:8085/api/admin/payments/363f135e-883c-44b1-968d-6300c9582318
+
+###
+
+### Dashboard
+POST http://localhost:8085/api/admin/dashboard
+Content-Type: application/json
+
+{
+  "accountIds": ["7e8165a1-238a-420b-8862-f7362df9d2e9"],
+  "paymentIds": ["363f135e-883c-44b1-968d-6300c9582318"]
+}
+
+###
+
+### Fraud raporu
+POST http://localhost:8085/api/admin/reports/fraud
+Content-Type: application/json
+
+{
+  "accountIds": ["29ba84b7-b28f-4cde-8ccb-8dddd04609cd"]
+}
